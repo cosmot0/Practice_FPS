@@ -46,7 +46,7 @@ public class PlayerFire : MonoBehaviour
         // 마우스 오른쪽 버튼 누르면 시선이 바라보는 방향으로 수류탄 던지고 싶다
 
         // 1. 마우스 오른쪽 버튼을 입력받는다
-        if (Input.GetMouseButton(1))
+        if (Input.GetMouseButtonDown(1))
         {
             // 수류탄 오브젝트 생성 후 수류탄의 생성 위치를 발사 위치로 한다
             GameObject bomb = Instantiate(bombFactory);
