@@ -15,6 +15,12 @@ public class CamRotate : MonoBehaviour
     
     void Update()
     {
+        // 게임 상태가 '게임중' 상태일때만 조작할 수 있게 한다
+        if (GameManager.gm.gState != GameManager.GameState.Run)
+        {
+            return;
+        }
+
         // 사용자의 마우스 입력을 받아 물체를 회전시키고 싶다
 
         // 1. 마우스 입력 받는다

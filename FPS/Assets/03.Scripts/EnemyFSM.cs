@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class EnemyFSM : MonoBehaviour
 {
@@ -45,9 +46,22 @@ public class EnemyFSM : MonoBehaviour
 
     // 초기 위치 저장용 변수
     Vector3 originPos;
+    Quaternion originRot;
 
     // 이동 가능 범위
     public float moveDistance = 20f;
+
+    // 에너미의 체력
+    public int hp = 15;
+
+    // 에너미의 최대 체력
+    int maxHP = 15;
+
+    // 에너미 hp Slider 변수
+    public Slider hpSlider;
+
+    // 애니메이터 변수
+    Animator anim;
 
 
     void Start()
@@ -59,8 +73,12 @@ public class EnemyFSM : MonoBehaviour
         // 캐릭터 콘트롤러 컴포넌트 받아오기
         cc = GetComponent<CharacterController>();
 
-        // 자신의 초기 위치 저장하기
+        // 자신의 초기 위치, 회전값 저장하기
         originPos = transform.position;
+        originRot = transform.rotation;
+
+        // 자식 오브젝트로부터 애니메이터 변수 받아오기
+        anim = transform.GetComponentInChildren<Animator>();
     }
 
     
@@ -82,28 +100,36 @@ public class EnemyFSM : MonoBehaviour
                 Return();
                 break;
             case EnemyState.Damaged:
-                Damaged();
+                //Damaged();
                 break;
             case EnemyState.Die:
-                Die();
+                //Die();
                 break;
         }
+
+        // 현재 hp(%)를 hp 슬라이더의 value 에 반영한다
+        hpSlider.value = (float)hp / (float)maxHP;
         
     }
 
     void Idle()
     {
+
         // 만일 플레이어와의 거리가 액션시작 범위 이내라면 move 상태로 전환
         if(Vector3.Distance(transform.position, player.position) < findDistance)
         {
             m_State = EnemyState.Move;
             print("상태 전환 : Idle -> Move");
+
+            // 이동 애니메이션으로 전환하기
+            anim.SetTrigger("IdleToMove");
         }
         
     }
 
     void Move()
     {
+        // 만일 현재 위치가 초기 위치에서 이동 가능 범위를 넘어간다면...
         if (Vector3.Distance(transform.position, originPos) > moveDistance)
         {
             m_State = EnemyState.Return;
@@ -118,6 +144,9 @@ public class EnemyFSM : MonoBehaviour
 
             // 캐릭터 콘트롤러를 이용해 이동하기
             cc.Move(dir * moveSpeed * Time.deltaTime);
+
+            // 플레이어를 향해 방향을 전환
+            transform.forward = dir;
         }
         // 그렇지 않다면, 현재 상태를 공격으로 전환
         else
@@ -127,6 +156,9 @@ public class EnemyFSM : MonoBehaviour
 
             // 누적 시간을 공격 딜레이 시간만큼 미리 진행시켜놓는다
             currentTime = attackDelay;
+
+            // 공격 대기 애니메이션 플레이
+            anim.SetTrigger("MoveToAttackDelay");
         }
 
        
@@ -141,9 +173,12 @@ public class EnemyFSM : MonoBehaviour
 
             if(currentTime > attackDelay)
             {
-                player.GetComponent<PlayerMove>().DamageAction(attackPower);
+                //player.GetComponent<PlayerMove>().DamageAction(attackPower);
                 print("공격");
                 currentTime = 0;
+
+                // 공격 애니메이션 플레이
+                anim.SetTrigger("StartAttack");
             }
         }
         else // 그렇지않다면 현재 상태를 이동으로 전환한다 (재추격)
@@ -151,9 +186,18 @@ public class EnemyFSM : MonoBehaviour
             m_State = EnemyState.Move;
             print("상태 전환 Attack -> Move");
             currentTime = 0;
+
+            // 이동 애니메이션 플레이
+            anim.SetTrigger("AttackToMove");
             
         }
+
     }
+    public void AttackAction()
+    {
+        player.GetComponent<PlayerMove>().DamageAction(attackPower);
+    }
+
     void Return()
     {
         // 만일 초기 위치에서의 거리가 0.1f 이상이라면 초기 위치쪽으로 이동한다
@@ -161,24 +205,96 @@ public class EnemyFSM : MonoBehaviour
         {
             Vector3 dir = (originPos - transform.position).normalized;
             cc.Move(dir * moveSpeed * Time.deltaTime);
+
+            // 방향을 복귀 지점으로 전환한다
+            transform.forward = dir;
+
         }
         // 그렇지 않다면, 자신의 위치를 초기 위치로 돌리고 현재 상태를 대기
         else
         {
             transform.position = originPos;
+            transform.rotation = originRot;
 
             //hp 를 다시 회복한다
-            //hp = maxHp;
+            hp = maxHP;
+            
             m_State = EnemyState.Idle;
             print("상태전환 : return -> idle");
+
+            // 대기 애니메이션으로 전환하는 트랜지션을 호출한다
+            anim.SetTrigger("MoveToIdle");
         }
     }
     void Damaged()
     {
-
+        StartCoroutine(DamageProcess());
     }
     void Die()
     {
+        // 진행 중인 피격 코루틴을 중지
+        StopAllCoroutines();
 
+        // 죽음 상태를 처리하기 위한 코루틴 실행
+        StartCoroutine(DieProcess());
+    }
+
+    //데미지 실행 함수
+    public void HitEnemy(int hitPower)
+    {
+        // 만일 이미 피격 상태이거나 사망, 또는 복귀 상태라면 아무 처리없이 함수 종료
+        if (m_State == EnemyState.Damaged || m_State == EnemyState.Die || m_State == EnemyState.Return)
+        {
+            return;
+        }
+
+        // 플레이어의 공격력 만큼 에너미의 체력을 감소시킨다
+        hp -= hitPower;
+
+        // 에너미의 체력이 0보다 크면 피격 상태로 전환
+        if(hp > 0)
+        {
+            m_State = EnemyState.Damaged;
+            print("상태전환 : anystate -> damaged");
+
+            //피격 애니메이션을 플레이
+            anim.SetTrigger("Damaged");
+
+            Damaged();
+        }
+
+        // 그렇지 않다면 죽음 상태로 전환한다
+        else
+        {
+            m_State = EnemyState.Die;
+            print("상태 전환 : any state -> Die");
+
+            // 죽음 애니메이션을 플레이
+            anim.SetTrigger("Die");
+
+            Die();
+        }
+
+    }
+
+    IEnumerator DamageProcess()
+    {
+        // 피격 모션 시간만큼 기다린다
+        yield return new WaitForSeconds(1.0f);
+
+        // 현재 상태를 이동 상태로 전환
+        m_State = EnemyState.Move;
+        print("상태 전환 : damaged -> move");
+    }
+
+    IEnumerator DieProcess()
+    {
+        // 캐릭터 콘트롤러 컴포넌트 비활성
+        cc.enabled = false;
+
+        // 2초 동안 기다린 후 자기 자신 제거
+        yield return new WaitForSeconds(2f);
+        print("소멸");
+        Destroy(this.gameObject);
     }
 }
