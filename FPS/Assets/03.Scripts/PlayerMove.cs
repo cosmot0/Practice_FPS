@@ -23,10 +23,15 @@ public class PlayerMove : MonoBehaviour
     public bool isJumping = false;
 
 
+
+    
+
     void Start()
     {
         // 캐릭터 콘트롤러 컴포넌트 받아오기
         cc = GetComponent<CharacterController>();
+
+        
     }
 
 
@@ -73,5 +78,12 @@ public class PlayerMove : MonoBehaviour
 
 
         
+    }
+
+    // 플레이어의 피격 함수
+    public void DamageAction(int damage)
+    {
+        // 에너미 공격력만큼 플레이어의 체력 깍다
+        //hp -= damage;
     }
 }
