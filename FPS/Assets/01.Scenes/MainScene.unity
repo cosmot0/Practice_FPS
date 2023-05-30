@@ -1687,7 +1687,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 7
-  jumpPower: 5
+  jumpPower: 10
   isJumping: 0
   hp: 20
   hpSlider: {fileID: 1066812960}

@@ -17,7 +17,7 @@ public class DestroyEffect : MonoBehaviour
         // 만일 경과 시간이 제거될 시간을 초과하면 자기 자신을 제거한다
         if(currentTime > destroyTime)
         {
-            Destroy(gameObject);
+            Destroy(this.gameObject);
         }
         // 경과 시간을 누적한다
         currentTime += Time.deltaTime;
