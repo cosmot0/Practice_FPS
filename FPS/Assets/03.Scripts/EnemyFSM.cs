@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AI;
 
 public class EnemyFSM : MonoBehaviour
 {
@@ -63,6 +64,8 @@ public class EnemyFSM : MonoBehaviour
     // 애니메이터 변수
     Animator anim;
 
+    // 내비게이션 에이전트 변서ㅜ
+    NavMeshAgent smith;
 
     void Start()
     {
@@ -79,6 +82,9 @@ public class EnemyFSM : MonoBehaviour
 
         // 자식 오브젝트로부터 애니메이터 변수 받아오기
         anim = transform.GetComponentInChildren<Animator>();
+
+        // 내비게이션 에이전트 컴포넌트 받아오기
+        smith = GetComponent<NavMeshAgent>();
     }
 
     
