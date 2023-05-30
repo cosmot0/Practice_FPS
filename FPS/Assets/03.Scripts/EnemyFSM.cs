@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AI;
 
 public class EnemyFSM : MonoBehaviour
 {
@@ -63,6 +64,9 @@ public class EnemyFSM : MonoBehaviour
     // 애니메이터 변수
     Animator anim;
 
+    // 내비게이션 에이전트 변수
+    NavMeshAgent smith;
+
 
     void Start()
     {
@@ -79,6 +83,8 @@ public class EnemyFSM : MonoBehaviour
 
         // 자식 오브젝트로부터 애니메이터 변수 받아오기
         anim = transform.GetComponentInChildren<Animator>();
+
+        smith = GetComponent<NavMeshAgent>();
     }
 
     
@@ -139,6 +145,7 @@ public class EnemyFSM : MonoBehaviour
         // 만일 플레이어와의 거리가 공격 범위 밖이라면 플레이어를 향해 이동
         else if (Vector3.Distance(transform.position, player.position) > attackDistance)
         {
+            /*
             // 이동 방향 설정
             Vector3 dir = (player.position - transform.position).normalized;
 
@@ -147,6 +154,20 @@ public class EnemyFSM : MonoBehaviour
 
             // 플레이어를 향해 방향을 전환
             transform.forward = dir;
+            */
+
+            // 내비게이션 에이전트의 이동 멈추고 경로 초기화
+            smith.isStopped = true;
+
+            smith.ResetPath();
+           
+
+            // 내비게이션으로 접근하는 최소 거리를 공격 가능 거리로 설정한다
+            smith.stoppingDistance = attackDistance;
+
+            // 내비게이션의 목적지를 플레이어의 위치로 설정한다
+            smith.destination = player.position;
+
         }
         // 그렇지 않다면, 현재 상태를 공격으로 전환
         else
@@ -203,16 +224,30 @@ public class EnemyFSM : MonoBehaviour
         // 만일 초기 위치에서의 거리가 0.1f 이상이라면 초기 위치쪽으로 이동한다
         if(Vector3.Distance(transform.position, originPos) > 0.1f)
         {
+            /*
             Vector3 dir = (originPos - transform.position).normalized;
             cc.Move(dir * moveSpeed * Time.deltaTime);
 
             // 방향을 복귀 지점으로 전환한다
             transform.forward = dir;
+            */
+
+            // 내비게이션 목적지를 초기 저장위치로 설정
+            smith.destination = originPos;
+
+            // 내비게이션으로 접근하는 최소 거리를 0으로 설정
+            smith.stoppingDistance = 0;
 
         }
         // 그렇지 않다면, 자신의 위치를 초기 위치로 돌리고 현재 상태를 대기
         else
         {
+
+            // 내비게이션 에이전트의 이동 멈추고 경로 초기화
+            smith.isStopped = true;
+            smith.ResetPath();
+
+            // 위치 값과 회전 값 초기 상태로 변환
             transform.position = originPos;
             transform.rotation = originRot;
 
@@ -250,6 +285,10 @@ public class EnemyFSM : MonoBehaviour
 
         // 플레이어의 공격력 만큼 에너미의 체력을 감소시킨다
         hp -= hitPower;
+
+        // 내비게이션 에이전트의 이동 멈추고 경로 초기화
+        smith.isStopped = true;
+        smith.ResetPath();
 
         // 에너미의 체력이 0보다 크면 피격 상태로 전환
         if(hp > 0)
