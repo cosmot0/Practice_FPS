@@ -13,9 +13,9 @@ public class BombAction : MonoBehaviour
         GameObject eff = Instantiate(bombEffect);
 
         // 이펙트 프리팹의 위치는 수류탄 오브젝트 자신의 위치와 동일
-        eff.transform.position = this.transform.position;
+        eff.transform.position = transform.position;
 
         //자기 자신을 제거한다
-        Destroy(this.gameObject);
+        Destroy(gameObject);
     }
 }
