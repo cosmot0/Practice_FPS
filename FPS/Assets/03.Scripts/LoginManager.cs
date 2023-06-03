@@ -34,7 +34,7 @@ public class LoginManager : MonoBehaviour
         }
 
         // 만일 시스템에 저장돼 있는 아이디가 존재하지 않는다면
-        if (PlayerPrefs.HasKey(id.text))
+        if (!PlayerPrefs.HasKey(id.text))
         {
             // 사용자의 아이디는 키(key)// 패스워드 값(value)으로 저장한다
             PlayerPrefs.SetString(id.text, password.text);
